@@ -1,9 +1,7 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
 from keras.models import load_model
-# from tensorflow.python.training.checkpointable import util as checkpointable_util
 import argparse
 import tensorflow as tf
-
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 from sklearn.model_selection import train_test_split
@@ -13,20 +11,26 @@ import re
 import numpy as np
 import os
 import io
-import time
-import h5py
+import tkinter as tk
+import tkinter.ttk as ttk
+from tkinter import filedialog
+from PIL import Image, ImageTk
 
 print(tf.__version__)
 
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"]="My Project-1379e3a8f3f2.json"
+# this is modifiable
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"]="C:\\Users\\rijar\\Desktop\\oh Creds\\my-project-1506609487150-fb71f4198eca.json"
+# Nat's Code:
+# os.environ["GOOGLE_APPLICATION_CREDENTIALS"]="My Project-1379e3a8f3f2.json"
 
-#ap = argparse.ArgumentParser()
-#ap.add_argument("-i", "--image", type=str,
-#	help="path to input image")
-#args = vars(ap.parse_args())
+# ap = argparse.ArgumentParser()
+# ap.add_argument("-i", "--image", type=str,
+#     help="path to input image")
+# args = vars(ap.parse_args())
 
 def detect_text(path):
-    tupColor = (0, 0, 255)
+    """Detects text in the file."""
+    tupColor = (255, 255, 0)
     import cv2
     from google.cloud import vision
     import io
@@ -46,11 +50,12 @@ def detect_text(path):
 
         vertices = (['({},{})'.format(vertex.x, vertex.y)
                     for vertex in text.bounding_poly.vertices])
+
         first = True
         count = 0
         for vertex in text.bounding_poly.vertices:
             if first:
-                cv2.line(imageFinal, (vertex.x, vertex.y), (vertex.x, vertex.y), tupColor, 3)
+                cv2.line(imageFinal, (vertex.x, vertex.y), (vertex.x, vertex.y), tupColor, 2)
                 sx = vertex.x
                 sy = vertex.y
                 tempx = sx
@@ -58,51 +63,26 @@ def detect_text(path):
                 first = False
                 count = count + 1
             elif count != 4:
-                cv2.line(imageFinal, (tempx, tempy), (vertex.x, vertex.y), tupColor, 3)
+                cv2.line(imageFinal, (tempx, tempy), (vertex.x, vertex.y), tupColor, 2)
                 tempx = vertex.x
                 tempy = vertex.y
                 count = count + 1
 
-        cv2.line(imageFinal, (tempx, tempy), (sx, sy), tupColor, 3)
+        cv2.line(imageFinal, (tempx, tempy), (sx, sy), tupColor, 2)
 
         first = True
         cv2.putText(imageFinal, text.description, (sx, (sy - 6)), cv2.FONT_HERSHEY_SIMPLEX, .6, (0, 0, 0), 1)
         print('bounds: {}'.format(','.join(vertices)))
 
-	# show the output image
+    """show the output image"""
     cv2.imshow("Detected Text", imageFinal)
     cv2.waitKey(0)
 
+    return texts[0].description
 
-
-def browse_file():
-
-    rep = filedialog.askopenfilename(title = "Select file")
-    print("~{}".format(rep))
-    detect_text("/{}".format(rep))
-
-root = tk.Tk()
-root.wm_title("OCR")
-style = ttk.Style(root)
-style.theme_use("clam")
-root.geometry("250x250")
-root.geometry("+300+300")
-
-
-#load = Image.open("logo.gif")
-#render = ImageTk.PhotoImage(load, format="gif -index 2")
-#img = tk.Label(image=render)
-#img.image = render
-#img.place(x=0, y=0)
-
-browserButton = tk.Button(master = root, text = 'Browse', width = 6, command=browse_file)
-browserButton.place(x=125, y=125)
-browserButton.pack()
-
-#root.after(0, update, 0)
-tk.mainloop()
 
 # ------------------------
+# Neural Machine Translation
 
 # Download the file
 
@@ -144,14 +124,14 @@ def preprocess_sentence(w):
 # 1. Remove the accents
 # 2. Clean the sentences
 # 3. Return word pairs in the format: [ENGLISH, SPANISH]
-def create_dataset(path, num_examples):
+def create_dataset(path):
     lines = io.open(path, encoding='UTF-8').read().strip().split('\n')
 
-    word_pairs = [[preprocess_sentence(w) for w in l.split('\t')]  for l in lines[:num_examples]]
+    word_pairs = [[preprocess_sentence(w) for w in l.split('\t')]  for l in lines]
 
     return zip(*word_pairs)
 
-en, sp = create_dataset(path_to_file, None)
+en, sp = create_dataset(path_to_file)
 print(en[-1])
 print(sp[-1])
 
@@ -167,8 +147,8 @@ def tokenize(lang):
                                                          padding='post')
   return tensor, lang_tokenizer
 
-def load_dataset(path, num_examples=None):
-    inp_lang, targ_lang = create_dataset(path, num_examples)
+def load_dataset(path):
+    inp_lang, targ_lang = create_dataset(path)
 
     input_tensor, inp_lang_tokenizer = tokenize(inp_lang)
     target_tensor, targ_lang_tokenizer = tokenize(targ_lang)
@@ -176,8 +156,7 @@ def load_dataset(path, num_examples=None):
     return input_tensor, target_tensor, inp_lang_tokenizer, targ_lang_tokenizer
 
 # Try experimenting with the size of that dataset
-num_examples = 30000
-input_tensor, target_tensor, inp_lang, targ_lang = load_dataset(path_to_file, num_examples)
+input_tensor, target_tensor, inp_lang, targ_lang = load_dataset(path_to_file)
 
 # Calculate max_length of the target tensors
 max_length_targ, max_length_inp = max_length(target_tensor), max_length(input_tensor)
@@ -387,6 +366,7 @@ def train_step(inp, targ, enc_hidden):
   optimizer.apply_gradients(zip(gradients, variables))
 
   return batch_loss
+
 '''
 EPOCHS = 100
 for epoch in range(EPOCHS):
@@ -411,9 +391,10 @@ for epoch in range(EPOCHS):
                                           total_loss / steps_per_epoch))
     print('Time taken for 1 epoch {} sec\n'.format(time.time() - start))
 '''
-def evaluate(sentence):
-    attention_plot = np.zeros((max_length_targ, max_length_inp))
 
+
+# Evaluates sentence being fed
+def evaluate(sentence):
     sentence = preprocess_sentence(sentence)
 
     inputs = [inp_lang.word_index[i] for i in sentence.split(' ')]
@@ -421,7 +402,6 @@ def evaluate(sentence):
                                                            maxlen=max_length_inp,
                                                            padding='post')
     inputs = tf.convert_to_tensor(inputs)
-
     result = ''
 
     hidden = [tf.zeros((1, units))]
@@ -435,48 +415,23 @@ def evaluate(sentence):
                                                              dec_hidden,
                                                              enc_out)
 
-        # storing the attention weights to plot later on
         attention_weights = tf.reshape(attention_weights, (-1, ))
-        attention_plot[t] = attention_weights.numpy()
-
         predicted_id = tf.argmax(predictions[0]).numpy()
-
         result += targ_lang.index_word[predicted_id] + ' '
-
         if targ_lang.index_word[predicted_id] == '<end>':
-            return result, sentence, attention_plot
+            return result, sentence # attention_plot
             # the predicted ID is fed back into the model
         dec_input = tf.expand_dims([predicted_id], 0)
 
-    return result, sentence, attention_plot
-
-# function for plotting the attention weights
-
-def plot_attention(attention, sentence, predicted_sentence):
-    fig = plt.figure(figsize=(10,10))
-    ax = fig.add_subplot(1, 1, 1)
-    ax.matshow(attention, cmap='viridis')
-
-    fontdict = {'fontsize': 14}
-
-    ax.set_xticklabels([''] + sentence, fontdict=fontdict, rotation=90)
-    ax.set_yticklabels([''] + predicted_sentence, fontdict=fontdict)
-
-    ax.xaxis.set_major_locator(ticker.MultipleLocator(1))
-    ax.yaxis.set_major_locator(ticker.MultipleLocator(1))
-
-    plt.show()
+    return result, sentence
 
 def translate(sentence):
-    result, sentence, attention_plot = evaluate(sentence)
+    result, sentence = evaluate(sentence)
 
     print('Input: %s' % (sentence))
     print('Predicted translation: {}'.format(result))
 
-    #attention_plot = attention_plot[:len(result.split(' ')), :len(sentence.split(' '))]
-    #plot_attention(attention_plot, sentence.split(' '), result.split(' '))
-
-# restoring the latest checkpoint in checkpoint_dir
+# restores checkpoint
 checkpoint.restore(tf.train.latest_checkpoint(checkpoint_dir))
 
 # -------------------
@@ -499,22 +454,44 @@ print('\n')
 translate(u"The cat is black")
 translate(u"Help wanted.")
 translate(u"Stop")
-translate(u"Wake up human")
+# translate(u"Wake up human")
 #translate(u"No Parking")
 #translate(u"Caution")
 translate(u"Do not enter.")
 #translate(u"No trespassing")
 translate(u"No smoking")
-translate(u"Be prepared to stop")
+translate(u"Hospital")
 # en, sp = create_dataset(path_to_file, None)
 # print(en[-1])
 # print(sp[-1])
 
-enc_sentence = detect_text(args["image"])
-print(enc_sentence)
+# enc_sentence = detect_text(args["image"])
+# print(enc_sentence)
 print('\n')
-translate(detect_text(args["image"]))
 
+
+def browse_file():
+    rep = filedialog.askopenfilename(title = "Select file")
+    print("~{}".format(rep))
+
+    # Windows browse file
+    enc_sentence = detect_text(rep)
+    translate(enc_sentence)
+    # Mac OS browse file
+    # detect_text("/{}".format(rep))
+
+root = tk.Tk()
+root.wm_title("OCR")
+style = ttk.Style(root)
+style.theme_use("clam")
+root.geometry("250x250")
+root.geometry("+300+300")
+
+browserButton = tk.Button(master = root, text = 'Browse', width = 6, command=browse_file)
+browserButton.place(x=125, y=125)
+browserButton.pack()
+
+tk.mainloop()
 # en_sentence = u"May I borrow this book?"
 # sp_sentence = u"¿Puedo tomar prestado este libro?"
 # print(preprocess_sentence(enc_sentence))
