@@ -19,9 +19,14 @@ from PIL import Image, ImageTk
 print(tf.__version__)
 
 # this is modifiable
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"]="C:\\Users\\rijar\\Desktop\\oh Creds\\my-project-1506609487150-fb71f4198eca.json"
-# Nat's Code:
-# os.environ["GOOGLE_APPLICATION_CREDENTIALS"]="My Project-1379e3a8f3f2.json"
+try:
+    os.environ["GOOGLE_APPLICATION_CREDENTIALS"]="C:\\Users\\rijar\\Desktop\\oh Creds\\my-project-1506609487150-fb71f4198eca.json"
+except:
+    print('looking for google auth failed, trying again')
+try:
+    os.environ["GOOGLE_APPLICATION_CREDENTIALS"]="My Project-1379e3a8f3f2.json"
+except:
+    print("failed to auth with google services")
 
 # ap = argparse.ArgumentParser()
 # ap.add_argument("-i", "--image", type=str,
@@ -470,7 +475,7 @@ translate(u"Hospital")
 print('\n')
 
 
-def browse_file():
+def browse_fileWindows():
     rep = filedialog.askopenfilename(title = "Select file")
     print("~{}".format(rep))
 
@@ -480,6 +485,15 @@ def browse_file():
     # Mac OS browse file
     # detect_text("/{}".format(rep))
 
+def browse_fileMac():
+    rep = filedialog.askopenfilename(title = "Select file")
+    print("~{}".format(rep))
+    #detect_text("/{}".format(rep))
+    enc_sentence = detect_text("/{}".format(rep))
+    translate(enc_sentence)
+    # Mac OS browse file
+
+
 root = tk.Tk()
 root.wm_title("OCR")
 style = ttk.Style(root)
@@ -487,9 +501,14 @@ style.theme_use("clam")
 root.geometry("250x250")
 root.geometry("+300+300")
 
-browserButton = tk.Button(master = root, text = 'Browse', width = 6, command=browse_file)
+browserButton = tk.Button(master = root, text = 'Browse Windows', width = 6, command=browse_fileWindows)
 browserButton.place(x=125, y=125)
 browserButton.pack()
+
+browserButton = tk.Button(master = root, text = 'Browse Mac', width = 6, command=browse_fileMac)
+browserButton.place(x=125, y=25)
+browserButton.pack()
+
 
 tk.mainloop()
 # en_sentence = u"May I borrow this book?"
