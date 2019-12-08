@@ -33,6 +33,9 @@ except:
 #     help="path to input image")
 # args = vars(ap.parse_args())
 
+# for gui
+translation_result = ""
+
 def detect_text(path):
     """Detects text in the file."""
     tupColor = (255, 255, 0)
@@ -80,6 +83,7 @@ def detect_text(path):
         print('bounds: {}'.format(','.join(vertices)))
 
     """show the output image"""
+
     cv2.imshow("Detected Text", imageFinal)
     cv2.waitKey(0)
 
@@ -436,6 +440,10 @@ def translate(sentence):
     print('Input: %s' % (sentence))
     print('Predicted translation: {}'.format(result))
 
+    global translation_result
+    translation_result = result
+
+
 # restores checkpoint
 checkpoint.restore(tf.train.latest_checkpoint(checkpoint_dir))
 
@@ -475,6 +483,7 @@ translate(u"Hospital")
 print('\n')
 
 
+
 def browse_fileWindows():
     rep = filedialog.askopenfilename(title = "Select file")
     print("~{}".format(rep))
@@ -482,17 +491,40 @@ def browse_fileWindows():
     # Windows browse file
     enc_sentence = detect_text(rep)
     translate(enc_sentence)
-    # Mac OS browse file
-    # detect_text("/{}".format(rep))
+    W = tk.Toplevel()
+    W.wm_title("Translation")
+    S = tk.Scrollbar(W)
+    T = tk.Text(W, height=5, width=50)
+    S.pack(side=tk.RIGHT, fill=tk.Y)
+    T.pack(side=tk.LEFT, fill=tk.Y)
+    S.config(command=T.yview)
+    T.config(yscrollcommand=S.set)
+    T.insert(tk.END, translation_result)
 
 def browse_fileMac():
     rep = filedialog.askopenfilename(title = "Select file")
     print("~{}".format(rep))
-    #detect_text("/{}".format(rep))
+
     enc_sentence = detect_text("/{}".format(rep))
     translate(enc_sentence)
-    # Mac OS browse file
 
+    popup = tk.Tk()
+    def on_configure(event):
+        # update scrollregion after starting 'mainloop'
+        # when all widgets are in canvas
+        canvas.configure(scrollregion=canvas.bbox('all'))
+    canvas = tk.Canvas(popup)
+    canvas.pack(side=tk.LEFT)
+    scrollbar = tk.Scrollbar(popup, command=canvas.yview)
+    scrollbar.pack(side=tk.LEFT, fill='y')
+    canvas.configure(yscrollcommand = scrollbar.set)
+    canvas.bind('<Configure>', on_configure)
+    frame = tk.Frame(canvas)
+    canvas.create_window((0,0), window=frame, anchor='nw')
+    l = tk.Label(frame, text=translation_result, font="-size 10", wraplength=70)
+    l.pack()
+
+# build the GUI
 
 root = tk.Tk()
 root.wm_title("OCR")
@@ -501,16 +533,18 @@ style.theme_use("clam")
 root.geometry("250x250")
 root.geometry("+300+300")
 
-browserButton = tk.Button(master = root, text = 'Browse Windows', width = 6, command=browse_fileWindows)
+browserButton = tk.Button(master = root, text = 'Browse Windows', width = 14, command=browse_fileWindows)
 browserButton.place(x=125, y=125)
 browserButton.pack()
 
-browserButton = tk.Button(master = root, text = 'Browse Mac', width = 6, command=browse_fileMac)
+browserButton = tk.Button(master = root, text = 'Browse Mac', width = 14, command=browse_fileMac)
 browserButton.place(x=125, y=25)
 browserButton.pack()
 
 
 tk.mainloop()
+
+
 # en_sentence = u"May I borrow this book?"
 # sp_sentence = u"¿Puedo tomar prestado este libro?"
 # print(preprocess_sentence(enc_sentence))
