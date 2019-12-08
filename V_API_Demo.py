@@ -329,12 +329,9 @@ def translate(sentence):
     print('Input: %s' % sentence)
     print('Predicted translation: {}'.format(result))
 
-<<<<<<< HEAD
     global translation_result
     translation_result = result
 
-=======
->>>>>>> b63574f32d9de496475dd380970238ca2d11c037
 
 # restores checkpoint
 checkpoint.restore(tf.train.latest_checkpoint(checkpoint_dir))
@@ -348,7 +345,6 @@ def browse_fileWindows():
     print("~{}".format(rep))
     enc_sentence = detect_text(rep)
     translate(enc_sentence)
-<<<<<<< HEAD
     W = tk.Toplevel()
     W.wm_title("Translation")
     S = tk.Scrollbar(W)
@@ -358,17 +354,11 @@ def browse_fileWindows():
     S.config(command=T.yview)
     T.config(yscrollcommand=S.set)
     T.insert(tk.END, translation_result)
-=======
-
->>>>>>> b63574f32d9de496475dd380970238ca2d11c037
 
 def browse_fileMac():
     rep = filedialog.askopenfilename(title = "Select file")
     print("~{}".format(rep))
-<<<<<<< HEAD
 
-=======
->>>>>>> b63574f32d9de496475dd380970238ca2d11c037
     enc_sentence = detect_text("/{}".format(rep))
     translate(enc_sentence)
 
@@ -405,7 +395,6 @@ browserButton = tk.Button(master = root, text = 'Browse Mac', width = 14, comman
 browserButton.place(x=125, y=25)
 browserButton.pack()
 
-<<<<<<< HEAD
 
 tk.mainloop()
 
@@ -415,6 +404,3 @@ tk.mainloop()
 # print(preprocess_sentence(enc_sentence))
 # print(preprocess_sentence(dec_sentence).encode('utf-8'))
 # -------------------
-=======
-tk.mainloop()
->>>>>>> b63574f32d9de496475dd380970238ca2d11c037
